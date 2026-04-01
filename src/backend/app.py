@@ -2,8 +2,10 @@ from flask import Flask, request, jsonify
 from data import get_stock_data
 from model import train_model, predict_next_price
 from db import init_db, save_prediction
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # Initialize DB
 init_db()
