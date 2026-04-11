@@ -28,3 +28,4 @@ def save_prediction(ticker, price):
     conn.commit()
     conn.close()
 
+

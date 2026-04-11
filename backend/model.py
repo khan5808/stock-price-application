@@ -25,3 +25,4 @@ def predict_next_price(model, df):
     prediction = model.predict(features)[0]
     return float(prediction)
 
+
