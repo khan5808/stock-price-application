@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
-from data import get_stock_data
-from model import train_model, predict_next_price
-from db import init_db, save_prediction
+from backend.data import get_stock_data
+from backend.model import train_model, predict_next_price
+from backend.db import init_db, save_prediction
 
 app = Flask(__name__)
 
