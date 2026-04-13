@@ -62,6 +62,18 @@ def get_predictions():
 
     return jsonify(rows)
 
+@app.route("/stock/<ticker>", methods=["GET"])
+def stock_data(ticker):
+    period = request.args.get("period", "1mo")
+    interval = request.args.get("interval", "1d")
+
+    df = get_stock_data(ticker, period, interval)
+    return df.to_json(orient="records")
+@app.route("/current/<ticker>")
+def current_price(ticker):
+    price = get_current_price(ticker)
+    return {"ticker": ticker.upper(), "price": price}
+
 if __name__ == "__main__":
     app.run(debug=True)
 
