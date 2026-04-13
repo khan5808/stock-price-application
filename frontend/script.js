@@ -107,3 +107,80 @@ async function predictPrice() {
         `Predicted Price: $${data.predicted_price.toFixed(2)}`;
 }
 
+function showSection(id) {
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+}
+
+const popularStocks = ["AAPL", "TSLA", "MSFT", "GOOGL", "AMZN", "NVDA"];
+
+function showSuggestions() {
+    const input = document.getElementById("ticker").value.toUpperCase();
+    const list = document.getElementById("suggestions");
+
+    list.innerHTML = "";
+
+    const matches = popularStocks.filter(s => s.includes(input));
+
+    matches.forEach(stock => {
+        const li = document.createElement("li");
+        li.innerText = stock;
+        li.onclick = () => {
+            document.getElementById("ticker").value = stock;
+            list.innerHTML = "";
+        };
+        list.appendChild(li);
+    });
+}
+
+function renderCandlestick(data) {
+    const ctx = document.getElementById("stockChart").getContext("2d");
+
+    const formatted = data.map(d => ({
+        x: new Date(d.Date || d.Datetime),
+        o: d.Open,
+        h: d.High,
+        l: d.Low,
+        c: d.Close
+    }));
+
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+        type: "candlestick",
+        data: {
+            datasets: [{
+                label: "Stock",
+                data: formatted
+            }]
+        }
+    });
+}
+
+function renderRSI(data) {
+    const rsi = data.map(d => d.RSI);
+
+    new Chart(document.getElementById("rsiChart"), {
+        type: "line",
+        data: {
+            labels: data.map(d => d.Date),
+            datasets: [{ label: "RSI", data: rsi }]
+        }
+    });
+}
+
+setInterval(getCurrentPrice, 5000);
+
+async function loadLeaderboard() {
+    const res = await fetch(`${API_BASE}/leaderboard`);
+    const data = await res.json();
+
+    const list = document.getElementById("leaderboardList");
+    list.innerHTML = "";
+
+    data.forEach(stock => {
+        const li = document.createElement("li");
+        li.innerText = `${stock.ticker}: $${stock.price}`;
+        list.appendChild(li);
+    });
+}

@@ -35,6 +35,19 @@ def current_price(ticker):
     price = get_current_price(ticker)
     return {"ticker": ticker.upper(), "price": price}
 
+@app.route("/leaderboard")
+def leaderboard():
+    stocks = ["AAPL", "TSLA", "MSFT", "NVDA"]
+    results = []
+
+    for s in stocks:
+        price = get_current_price(s)
+        results.append({"ticker": s, "price": price})
+
+    results.sort(key=lambda x: x["price"], reverse=True)
+    return jsonify(results)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
 

@@ -25,4 +25,11 @@ def predict_next_price(model, df):
     prediction = model.predict(features)[0]
     return float(prediction)
 
+def add_indicators(df):
+    df['RSI'] = 100 - (100 / (1 + df['Close'].pct_change().rolling(14).mean()))
+    df['EMA12'] = df['Close'].ewm(span=12).mean()
+    df['EMA26'] = df['Close'].ewm(span=26).mean()
+    df['MACD'] = df['EMA12'] - df['EMA26']
+    return df
+
 

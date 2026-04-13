@@ -45,3 +45,45 @@ canvas {
     background: white;
     border-radius: 10px;
 }
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    background: #111827;
+    padding: 15px;
+}
+
+.navbar ul {
+    display: flex;
+    gap: 20px;
+    list-style: none;
+}
+
+.navbar li {
+    cursor: pointer;
+}
+
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+body {
+    background: #0f172a;
+    color: #e5e7eb;
+}
+
+.container {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+canvas {
+    background: #ffffff;
+    border-radius: 10px;
+}
+

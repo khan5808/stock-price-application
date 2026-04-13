@@ -2,82 +2,126 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Stock Price Predictor</title>
+    <title>StockPro Dashboard</title>
 
     <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    <!-- Chart.js -->
+    <!-- Chart.js + Financial -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
 </head>
+
 <body>
 
+<!-- NAVBAR -->
+<nav class="navbar">
+    <h2>📈 StockPro</h2>
+    <ul>
+        <li onclick="showSection('dashboard')">Dashboard</li>
+        <li onclick="showSection('predict')">Predict</li>
+        <li onclick="showSection('leaderboard')">Leaderboard</li>
+    </ul>
+</nav>
+
 <div class="container">
-    <h1>📈 Stock Dashboard</h1>
 
-    <!-- Search + Controls -->
-    <div class="controls">
-        <input type="text" id="ticker" placeholder="Enter ticker (AAPL, TSLA, etc.)">
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="section active">
 
-        <select id="timeframe">
-            <option value="1d">1 Day</option>
-            <option value="1w">1 Week</option>
-            <option value="1mo" selected>1 Month</option>
-            <option value="3mo">3 Months</option>
-            <option value="1y">1 Year</option>
-        </select>
+        <div class="controls">
+            <input type="text" id="ticker" placeholder="Search stocks..." oninput="showSuggestions()">
+            <ul id="suggestions"></ul>
 
-        <button onclick="loadData()">Load Data</button>
-        <button onclick="predictPrice()">Predict</button>
+            <select id="timeframe">
+                <option value="1d">1 Day</option>
+                <option value="1w">1 Week</option>
+                <option value="1mo" selected>1 Month</option>
+                <option value="3mo">3 Months</option>
+                <option value="1y">1 Year</option>
+            </select>
+
+            <button onclick="loadData()">Load Data</button>
+        </div>
+
+        <h2 id="currentPrice"></h2>
+
+        <!-- Candlestick Chart -->
+        <canvas id="stockChart"></canvas>
+
+        <!-- Indicators -->
+        <canvas id="rsiChart"></canvas>
+        <canvas id="macdChart"></canvas>
+
     </div>
 
-    <!-- Current Price -->
-    <h2 id="currentPrice"></h2>
+    <!-- PREDICT -->
+    <div id="predict" class="section">
+        <h2 id="prediction"></h2>
+        <button onclick="predictPrice()">Run Prediction</button>
+    </div>
 
-    <!-- Prediction -->
-    <h2 id="prediction"></h2>
+    <!-- LEADERBOARD -->
+    <div id="leaderboard" class="section">
+        <h2>🏆 Top Stocks</h2>
+        <ul id="leaderboardList"></ul>
+        <button onclick="loadLeaderboard()">Refresh</button>
+    </div>
 
-    <!-- Chart -->
-    <canvas id="stockChart"></canvas>
 </div>
 
 <script>
 const API_BASE = "http://127.0.0.1:5000";
-
 let chart;
 
-// Load stock data
+// NAVIGATION
+function showSection(id) {
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+}
+
+// AUTOCOMPLETE
+const popularStocks = ["AAPL","TSLA","MSFT","GOOGL","AMZN","NVDA"];
+
+function showSuggestions() {
+    const input = document.getElementById("ticker").value.toUpperCase();
+    const list = document.getElementById("suggestions");
+    list.innerHTML = "";
+
+    const matches = popularStocks.filter(s => s.includes(input));
+
+    matches.forEach(stock => {
+        const li = document.createElement("li");
+        li.innerText = stock;
+        li.onclick = () => {
+            document.getElementById("ticker").value = stock;
+            list.innerHTML = "";
+        };
+        list.appendChild(li);
+    });
+}
+
+// LOAD DATA
 async function loadData() {
     const ticker = document.getElementById("ticker").value;
     const timeframe = document.getElementById("timeframe").value;
 
-    if (!ticker) {
-        alert("Enter a ticker symbol");
-        return;
-    }
-
     let interval = "1d";
-
     if (timeframe === "1d") interval = "5m";
     if (timeframe === "1w") interval = "1h";
 
-    const res = await fetch(
-        `${API_BASE}/stock/${ticker}?period=${timeframe}&interval=${interval}`
-    );
-
+    const res = await fetch(`${API_BASE}/stock/${ticker}?period=${timeframe}&interval=${interval}`);
     const data = await res.json();
 
-    const labels = data.map(d => d.Datetime || d.Date);
-    const prices = data.map(d => d.Close);
-
-    renderChart(labels, prices);
+    renderCandlestick(data);
+    renderRSI(data);
+    renderMACD(data);
     getCurrentPrice();
 }
 
-// Get current price
+// CURRENT PRICE
 async function getCurrentPrice() {
     const ticker = document.getElementById("ticker").value;
-
     const res = await fetch(`${API_BASE}/current/${ticker}`);
     const data = await res.json();
 
@@ -85,15 +129,9 @@ async function getCurrentPrice() {
         `Current Price: $${data.price.toFixed(2)}`;
 }
 
-// Predict price
+// PREDICTION
 async function predictPrice() {
     const ticker = document.getElementById("ticker").value;
-
-    if (!ticker) {
-        alert("Enter a ticker symbol");
-        return;
-    }
-
     const res = await fetch(`${API_BASE}/predict/${ticker}`);
     const data = await res.json();
 
@@ -101,55 +139,74 @@ async function predictPrice() {
         `Predicted Price: $${data.predicted_price.toFixed(2)}`;
 }
 
-// Render chart
-function renderChart(labels, prices) {
+// CANDLESTICK CHART
+function renderCandlestick(data) {
     const ctx = document.getElementById("stockChart").getContext("2d");
 
-    if (chart) {
-        chart.destroy();
-    }
+    const formatted = data.map(d => ({
+        x: new Date(d.Date || d.Datetime),
+        o: d.Open,
+        h: d.High,
+        l: d.Low,
+        c: d.Close
+    }));
+
+    if (chart) chart.destroy();
 
     chart = new Chart(ctx, {
-        type: "line",
+        type: "candlestick",
         data: {
-            labels: labels,
             datasets: [{
                 label: "Stock Price",
-                data: prices,
-                borderWidth: 2,
-                pointRadius: 0,
-                tension: 0.2
+                data: formatted
             }]
-        },
-        options: {
-            responsive: true,
-            interaction: {
-                mode: "index",
-                intersect: false
-            },
-            plugins: {
-                tooltip: {
-                    enabled: true,
-                    callbacks: {
-                        label: function(context) {
-                            return `$${context.raw.toFixed(2)}`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    ticks: {
-                        maxTicksLimit: 10
-                    }
-                },
-                y: {
-                    beginAtZero: false
-                }
-            }
         }
     });
 }
+
+// RSI
+function renderRSI(data) {
+    const rsi = data.map(d => d.RSI || 0);
+
+    new Chart(document.getElementById("rsiChart"), {
+        type: "line",
+        data: {
+            labels: data.map(d => d.Date || d.Datetime),
+            datasets: [{ label: "RSI", data: rsi }]
+        }
+    });
+}
+
+// MACD
+function renderMACD(data) {
+    const macd = data.map(d => d.MACD || 0);
+
+    new Chart(document.getElementById("macdChart"), {
+        type: "line",
+        data: {
+            labels: data.map(d => d.Date || d.Datetime),
+            datasets: [{ label: "MACD", data: macd }]
+        }
+    });
+}
+
+// LEADERBOARD
+async function loadLeaderboard() {
+    const res = await fetch(`${API_BASE}/leaderboard`);
+    const data = await res.json();
+
+    const list = document.getElementById("leaderboardList");
+    list.innerHTML = "";
+
+    data.forEach(stock => {
+        const li = document.createElement("li");
+        li.innerText = `${stock.ticker}: $${stock.price}`;
+        list.appendChild(li);
+    });
+}
+
+// LIVE UPDATES
+setInterval(getCurrentPrice, 5000);
 </script>
 
 </body>
