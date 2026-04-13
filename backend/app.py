@@ -1,11 +1,11 @@
 from flask import Flask, request, jsonify
 
 try:
-    from .data import get_stock_data
+    from .data import get_stock_data, get_current_price
     from .model import train_model, predict_next_price
     from .db import init_db, save_prediction
 except ImportError:
-    from data import get_stock_data
+    from data import get_stock_data, get_current_price
     from model import train_model, predict_next_price
     from db import init_db, save_prediction
 
@@ -22,53 +22,14 @@ def home():
 @app.route("/stock/<ticker>", methods=["GET"])
 def stock_data(ticker):
     try:
-        df = get_stock_data(ticker)
+        period = request.args.get("period", "1mo")
+        interval = request.args.get("interval", "1d")
+
+        df = get_stock_data(ticker, period, interval)
         data = df.tail(30).to_dict(orient="records")
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-# Predict next price
-@app.route("/predict/<ticker>", methods=["GET"])
-def predict(ticker):
-    try:
-        df = get_stock_data(ticker)
-
-        model, processed_df = train_model(df)
-        prediction = predict_next_price(model, processed_df)
-
-        # Save to DB
-        save_prediction(ticker, prediction)
-
-        return jsonify({
-            "ticker": ticker.upper(),
-            "predicted_price": prediction
-        })
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# Get past predictions
-@app.route("/predictions", methods=["GET"])
-def get_predictions():
-    import sqlite3
-    conn = sqlite3.connect('stocks.db')
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM predictions ORDER BY timestamp DESC")
-    rows = cursor.fetchall()
-
-    conn.close()
-
-    return jsonify(rows)
-
-@app.route("/stock/<ticker>", methods=["GET"])
-def stock_data(ticker):
-    period = request.args.get("period", "1mo")
-    interval = request.args.get("interval", "1d")
-
-    df = get_stock_data(ticker, period, interval)
-    return df.to_json(orient="records")
 @app.route("/current/<ticker>")
 def current_price(ticker):
     price = get_current_price(ticker)
