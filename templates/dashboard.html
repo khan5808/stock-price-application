@@ -1,0 +1,13 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>Market Leaders</h1>
+<div class="grid">
+{% for item in leaders %}
+<a class="card" href="/stock/{{ item.ticker }}">
+<h3>{{ item.ticker }}</h3>
+<p>{{ item.name }}</p>
+<p>${{ item.price }}</p>
+</a>
+{% endfor %}
+</div>
+{% endblock %}

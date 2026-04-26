@@ -1,0 +1,30 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>{{ ticker }} - {{ name }}</h1>
+<div class="grid2">
+<div class="card">
+<h2>${{ price }}</h2>
+<p>AI Signal: <span class="signal">{{ signal }}</span></p>
+<p>Market Cap: {{ market_cap }}</p>
+<p>P/E: {{ pe }}</p>
+<p>Volume: {{ volume }}</p>
+<p>52W High: {{ high52 }}</p>
+<p>52W Low: {{ low52 }}</p>
+</div>
+<div class="card">
+<div id="chart" style="height:420px"></div>
+</div>
+</div>
+<div class="grid2">
+<div class="card"><h3>Prediction</h3><div id="pred"></div></div>
+<div class="card"><h3>Earnings</h3><div id="earn"></div></div>
+</div>
+<div class="grid2">
+<div class="card"><h3>News Feed</h3><ul id="news"></ul></div>
+<div class="card"><h3>Insider Trading</h3><ul id="insiders"></ul></div>
+</div>
+<div class="card"><h3>Company Overview</h3><p>{{ summary }}</p></div>
+<script>
+loadStockPage('{{ ticker }}');
+</script>
+{% endblock %}
