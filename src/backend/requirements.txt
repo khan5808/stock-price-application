@@ -1,0 +1,7 @@
+flask-login
+tensorflow
+flask-socketio
+flask
+yfinance
+pandas
+numpy

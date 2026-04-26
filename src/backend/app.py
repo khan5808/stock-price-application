@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, request
+from models.lstm_model import train_and_predict
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -30,7 +31,6 @@ def calc_signal(hist):
 @app.route('/')
 def home():
     return render_template('home.html')
-
 
 @app.route('/dashboard')
 def dashboard():
@@ -67,8 +67,7 @@ def stock(ticker):
         signal=signal,
         summary=news
     )
-
-
+    
 @app.route('/api/chart/<ticker>')
 def api_chart(ticker):
     period = request.args.get('period','6mo')
@@ -89,10 +88,11 @@ def api_chart(ticker):
 
 @app.route('/api/predict/<ticker>')
 def predict(ticker):
-    hist = yf.Ticker(ticker).history(period='3mo')['Close']
-    pred = float(hist.tail(5).mean()) if len(hist) else 0
-    signal = 'BUY' if pred > hist.iloc[-1] else 'SELL'
-    return jsonify({'prediction': round(pred,2), 'signal': signal})
+    hist = yf.Ticker(ticker).history(period='1y')['Close'].dropna()
+    pred = train_and_predict(hist.tolist())
+    last = float(hist.iloc[-1]) if len(hist) else 0
+    signal = 'BUY' if pred > last * 1.01 else ('SELL' if pred < last * 0.99 else 'HOLD')
+    return jsonify({'prediction': round(pred,2), 'last_price': round(last,2), 'signal': signal})
 
 
 @app.route('/api/news/<ticker>')
@@ -116,6 +116,22 @@ def api_insiders(ticker):
         {'name':'Director B','type':'Sell','shares':5000}
     ])
 
+@app.route('/api/watchlist')
+def watchlist():
+    return jsonify(['AAPL','NVDA','MSFT'])
+
+@app.route('/api/portfolio')
+def portfolio():
+    return jsonify({'cash':100000,'positions':[{'ticker':'AAPL','shares':10}]})
+
+@app.route('/api/sim/buy/<ticker>')
+def sim_buy(ticker):
+    return jsonify({'status':'ok','action':'buy','ticker':ticker.upper()})
+
+@app.route('/api/sim/sell/<ticker>')
+def sim_sell(ticker):
+    return jsonify({'status':'ok','action':'sell','ticker':ticker.upper()})
 
 if __name__ == '__main__':
     app.run(debug=True)
+
