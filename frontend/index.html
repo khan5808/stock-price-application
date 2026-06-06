@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Price Web App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Stock Price Tracker</h1>
+        <p class="subtitle">Search for any stock ticker to see live prices and predictions</p>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Enter stock symbol (e.g., AAPL, GOOGL, MSFT)..." autocomplete="off">
+            <ul id="suggestions-list" class="suggestions"></ul>
+        </div>
+
+        <div id="stock-data" class="stock-data hidden"></div>
+
+        <div id="chart-panel" class="stock-data hidden">
+            <div class="chart-header">
+                <div class="chart-title">Price History</div>
+                <div class="timeframe-buttons">
+                    <button type="button" class="timeframe-button active" data-period="24h">24H</button>
+                    <button type="button" class="timeframe-button" data-period="7d">7D</button>
+                    <button type="button" class="timeframe-button" data-period="1m">1M</button>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="price-chart" role="img" aria-label="Stock price chart"></canvas>
+            </div>
+        </div>
+
+        <div class="prediction-panel hidden">
+            <button id="predict-button" type="button">📊 Predict Stock Price</button>
+            <div id="prediction" class="prediction"></div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
